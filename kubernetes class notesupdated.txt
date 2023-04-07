@@ -1,0 +1,1182 @@
+3/9/21	
+
+	KUBERNETES
+
+Kubernetes, also known as K8s, is an open-source system for automating deployment, scaling, and management of containerized applications.
+
+K8s:
+High availability of the container
+Automatic creation of the container
+Rolling update
+Deployment strategy
+
+Docker-Swarm:
+++++++++++++++
+Manage and worker nodes took the work loads
+1. swarm Cluster – set of nodes on which you have docker installed
+2. Docker swarm is a tool that orchestrate docker containers only
+3. Easily setup small config – t2.micro 1GB 1CPU core
+K8S:
+Master & Slave Architecture
+++++++++++++++
+1.	Kubernetes cluster – set of nodes/minions on which you have containers tool installed
+2.	Master machine will not take any load, all the work load will take by slave only
+3.	Can orchestrate any kind of  CRIO, Container-D, Rocket Container, Docker 
+4.	Its so popular in market
+5.	Kube or k8s , cluster you have to also setup the required CRI(Container Runtime Interface) – Docker
+6.	Setup the cluster – CNI(Container N/w Interface) – like weave n/w- to perform manually
+7.	K8s cluster: min 4GB RAM $ 2 CPU Core memory – GCP – free for 3 months
+8.	Follow my steps to create GCP
+9.	AWS – EKS – very high paid- clusters are readymade
+10.	GCP – the service called as GKE – we have to create cluster
+11.	Azure – AKS
+
+Node:
+==========
+Kubernetes runs your workload by placing containers into Pods to run on Nodes. A node may be a virtual or physical machine, depending on the cluster. Each node is managed by the control plane and contains the services necessary to run Pods.
+
+Typically you have several nodes in a cluster; in a learning or resource-limited environment, you might have only one node.
+
+The components on a node include the kubelet, a container runtime, and the kube-proxy.
+
+
+Kubeadm:
+Its an automatic process that install all your components in the master machine and all the components in the slave machine
+Kubeadm using this process we can setup the Kubernetes cluster configurations.
+As you initiate the Kubernetes cluster setup again the token will be generated and once the token is executed on the slaves, and then slaves will join the master.
+Once the master and slave communication starts let’s say the administrator starts kubectl command to send a request to the master machine, when user sends a request
+Master also called as Control plane
+
+Step 1 – API Request
+send user to create a container on your cluster
+Request will be taken care by component called API server
+API Server: is a principle component in Kubernetes, its main component in k8s its responsible to take any request from the user. This user communicate with the api server using kubectl
+
+Step2. Scheduler:
+It’s a process that is continuously monitoring the api server as a API server gets a request to create some containers, scheduler will decide where should container gets created under which slaves
+Deciding task by scheduler
+Scheduler will tell to api server resources are created in slave1 you can create this 5 containers on slave1
+Step3: kubelet
+
+What is kubelet?
+Ans – Its an agent process
+Api servers will gets to know where the containers to be created, api server will communicate to the slave machine on the slave there is agent process running called Kubelet on the slave machine.
+Kubelet receive the request from API server to create 5 containers of tomcat.
+ kubelet will interact with docker which is installed on it and pull the images of tomcat and create 5 replicas
+Kubelet is the responsible to create and manage the containers/replicas on the slave machines
+Once the replicas/containers are created kubelet will send response/report back to API servers.
+That I have created the desired 5 Replicas
+
+Step 4: Controller Manager – High Availability – on Master Machine
+Then immediately controller manager on master will monitor these replicas.
+It is going to monitor these replicas – for High Availability
+Suppose  one replica goes down immediately one container will create on same
+
+Step5. Etcd
+It store values the data
+It consists of complete information of how many slaves are there how many resources are there in slave and how many replicas are running, which application are running, which slaves are running complete information ae stored
+Etcd will store complete information on cluster – like DB
+
+KubeProxy:
+++++++
+Kube proxy is n/w proxy that runs on each node in your cluster, implementing part of the Kubernetes service concepts.
+Kube proxy maintain n/w rules on the node. These n/w rules allow n/w communication to your Pods from n/w session inside or outside the cluster.
+Getting started – Google Cloud Platform
+Now check Ready Made cluster for below steps
+GCP – click on Kubernetes Engine – clusters - click on create cluster
+Click on GKE Standard cluster – click on configure
+The ready made cluster will give you 1 Master and 3 Slave machines
+Each machine 4GB ram and 2 cpu core
+
+
+ Note – kubernetes  we can not create containers directly we can create pods
+ 
+Pod – is about layer of abstraction on your container
+We are going to use Kubernetes controller for objects –
+Very smallest object can Kubernetes work on pods
+
+what is pod?
+
+Note: - we can not create container
+We can create pod only
+Pod – is about layer of abstraction on your container
+Each Pod we have an IP Address
+Container will not have IP Address, it will have port numbers
+As per the architecture if you create the pod, it should be distributed with pods
+POD will never create on the master machine
+Pod can create 2 ways
+1.	Informative command means Single line command which is not adapt(we should not use)
+2.	Create manifest files(means creation) – these are controller files or object creation files- k8s object definition files
+3.	Here we can written in yaml files
+
+Kubectl get pods
+get – means to get from etcd running db on master machine
+
+vim pod1.yml
+
+4 imp components/commands
+
+1. apiVersion:   code Library that k8s use to create object type of pod
+   apiVersion: v1
+2. Kind: kind of object - Pod/ReplicaSet/ Deployment/Service
+   kind: Pod
+3. metadata: information about the pod and label pod
+4. spec:  specification about the pod
+
+labels: 
+====
+labels are like to tag that you are attaching of your pod
+
+6/9/21
++++++++++++++++
+
+Topic:
+1.Single Pod - single line command\
+2.single pod - manifestfiles
+3.Mutiple Pods - ReplicaSet
+4.Services -
+three types of services
+   1. NodePort
+   2.ClusterIP
+   3.LoadBalancer
+5.Rolling Update startegy 
+
+kubectl run pod1 --image nginx
+
+vim singlepod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod1
+  labels: 
+   type: webserver
+   app: myapp
+   env: QA
+spec:
+  containers:
+  - name: myc1
+    image: nginx
+
+
+execution: 
+kubectl create -f singlepod.yml
+
+Multiple Pods -creations:
+-------------------
+RepilcaSet: means multiple pods
+it will create connection of multiple pods of same image
+
+2 ways replicas:
+===============
+1.single line command
+2. Manifest files
+
+vim rc.yml
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+ name: myrs
+ labels:
+  type: webserver
+spec:
+ replicas: 3
+ selector:         # 2 types of selectores --> 1. Equality Based selector   --> 2. Set-based selector
+  matchLabels:
+   type: webserver
+ template:
+  metadata:
+   name: mypod
+   labels:
+    type: webserver
+  spec:
+   containers:
+    - name: myn1
+      image: nginx
+
+		
+kubectl create -f  rc.yml
+
+Scaleup & Scaledown the replicas:
+=============================
+kubectl scale replicaset myrs --replicas=2
+kubectl get all
+
+Show Labels
+===========
+kubectl get pods --show-label
+kubectl get pods -l type=webserver
+
+Labels:
+===========
+labels are key-value key: value pairs which is attached to pod, replication contoller and services. They are used for idetifyng for objects such as 
+pods and replication controller .
+
+Selectors:
+===========
+Label do not provide uniqueness, in generally we can say many objects can carry the same labels.
+Labels selector are core grouping promitive in k8s.
+They are users to select a set of obects.
+K8S API Currently support 2 types of selectors
+  - Equality based selector
+  - set based selectors
+
+matchLabels:
+=============
+
+
+Service Object:
+===================
+an abstract way to expose an application running on set of Pods as a n/w service.
+with k8s you dont need to modify your application to use unfamiliar service discovery mechanism.
+k8s gives Pods their own IP address and a single DNS name for set of Pods, ans can be load-balance across them
+
+1. Node Port
+2. Load Balancer
+3. ClusterIP
+
+NodePort:
+A NodePort is an Open Port on every nodes of your cluster. k8s transperntely routes incoming traffic on the NodePort to your service, even if 
+your application running on a differente nodes
+however a NodePort is assigned from pool of cluster-configured.
+NodePort - 30000- 32767-  kubeproxy will be responsible to any of the port 
+
+3 nodes:
+routes incoming traffic 3 nodes
+
+ymlfile
+ - target port
+ 
+ vim node.yml
+ 
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysvc
+spec:
+   type: NodePort
+   ports:
+    - targetPort: 80
+      port: 80
+      nodePort: 30009
+   selector:
+     type: webserver
+
+kubecl create -f node.yml
+
+ClusterIP:
+The ClusterIP provides a load-balanced IP address. ... Internally, Kubernetes resolves the label selector to a set of pods, 
+and takes the ephemeral Pod IP addresses and generates Endpoints resources that the ClusterIP proxies traffic to.
+ The kube-proxy that is running on each node is used to configure each worker node.
+
+Load Balancer:
+K8s service controller automates the creations  of the external load balancer, healths checks(if needed), firewall rules(if needed) and retrive the
+ external ip allocated by the cloud provider and popular in the service object
+ 
+vim lb.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysvc1
+spec:
+   type: LoadBalancer
+   ports:
+   - targetPort: 80
+     port: 80
+   selector:
+     type: webserver
+	 
+
+Rolling update Strategy :
+-------------------
+nginx - i want to creatwe 3 replicas for nginx
+scanaio: 
+nginx: 1.0 - myappv1 - 3 replicas
+after 15 days - nginx - 2.0 - 3 replcas 
+
+
+7/9/21
++++++++++++++++++++++++++++++++++
+Rolling update Strategy:
+
+deployment.yml
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: kubeserve
+spec:
+  replicas: 3
+  minReadySeconds: 10 # wait for 45 sec before going to deploy next pod
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1  
+      maxSurge: 1        # max number of pods to run for the deployment
+  selector:
+    matchLabels:
+      app: kubeserve
+  template:
+    metadata:
+      name: kubeserve
+      labels:
+        app: kubeserve
+    spec:
+      containers:
+       - name: app
+         image: leaddevops/kubeserve:v1
+        
+---
+kind: Service
+apiVersion: v1
+metadata:
+   name: kubeserve-svc
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+  selector: 
+    app: kubeserve
+  
+	
+kubectl create -f deployment.yml
+
+kubectl get pods
+kubectl describe pod kubeserve-6975497d98(podname) | less
+kubectl rollout history deployment kubeserve
+kubectl describe deployment kubeserve | less
+
+update the image from v1 to v2:
+++++++++++++++++++++++++++++
+kubectl set image deployment kubeserve app=leaddevops/kubeserve:v2
+
+
+Rollout Undo: Roll Back
+--------------------
+from new version to old version
+kubectl rollout undo deployment kubeserve
+kubectl rollout status deployment kubeserve
+kubectl rollout history deployment kubeserve
+
+k8s Dash Board:
++++++++++++++++++++++++++
+vim k8s-dashboard.yml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubernetes-dashboard
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default 
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 9090
+  selector:
+    k8s-app: kubernetes-dashboard
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard-csrf
+  namespace: default
+type: Opaque
+data:
+  csrf: ""
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard-key-holder
+  namespace: default
+type: Opaque
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard-settings
+  namespace: default
+
+---
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+rules:
+  # Allow Dashboard to get, update and delete Dashboard exclusive secrets.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs", "kubernetes-dashboard-csrf"]
+    verbs: ["get", "update", "delete"]
+    # Allow Dashboard to get and update 'kubernetes-dashboard-settings' config map.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["kubernetes-dashboard-settings"]
+    verbs: ["get", "update"]
+    # Allow Dashboard to get metrics.
+  - apiGroups: [""]
+    resources: ["services"]
+    resourceNames: ["heapster", "dashboard-metrics-scraper"]
+    verbs: ["proxy"]
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    resourceNames: ["heapster", "http:heapster:", "https:heapster:", "dashboard-metrics-scraper", "http:dashboard-metrics-scraper"]
+    verbs: ["get"]
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+rules:
+  # Allow Metrics Scraper to get metrics from the Metrics server
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubernetes-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    namespace: default
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+#  name: kubernetes-dashboard
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: kubernetes-dashboard
+    #namespace: kubernetes-dashboard
+    namespace: default
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      containers:
+        - name: kubernetes-dashboard
+          image: kubernetesui/dashboard:v2.0.3 ## kubernetesui/dashboard:v2.0.0-beta8
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          args:
+            - --namespace=default
+            - --enable-skip-login
+            - --disable-settings-authorizer
+            - --enable-insecure-login
+          # Uncomment the following line to manually specify Kubernetes API server Host
+          # If not specified, Dashboard will attempt to auto discover the API server and connect
+          # to it. Uncomment only if the default does not work.
+          # - --apiserver-host=http://my-address:port
+          volumeMounts:
+            # Create on-disk volume to store exec logs
+            - mountPath: /tmp
+              name: tmp-volume
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1001
+            runAsGroup: 2001
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      serviceAccountName: kubernetes-dashboard
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      # Comment the following tolerations if Dashboard must not be deployed on master
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: dashboard-metrics-scraper
+  name: dashboard-metrics-scraper
+  namespace: default
+spec:
+  ports:
+    - port: 8000
+      targetPort: 8000
+  selector:
+    k8s-app: dashboard-metrics-scraper
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: dashboard-metrics-scraper
+  name: dashboard-metrics-scraper
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: dashboard-metrics-scraper
+  template:
+    metadata:
+      labels:
+        k8s-app: dashboard-metrics-scraper
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: 'runtime/default'
+    spec:
+      containers:
+        - name: dashboard-metrics-scraper
+          image: kubernetesui/metrics-scraper:v1.0.1
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-volume
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1001
+            runAsGroup: 2001
+      serviceAccountName: kubernetes-dashboard
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      # Comment the following tolerations if Dashboard must not be deployed on master
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+		  
+kubectl create -f k8s-dashboard.yml
+slaveip address and kubernetes-dashboard portnumber type browser
+
+Delete all POds, Service and Objects $ Deployment:
+------------------------------
+kubectl delete all --all
+
+Namespace:
+===============
+
+k8s, namespaces povides a mechanisam of isolating group of resouces with a single cluster, Names of resources need to be unique.
+Name Spaces:
+++++++++++++++++++++++++++++++++++++++++
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+   name: myrs
+   labels: 
+     type: webserver
+     namespace: sobha
+spec:
+   replicas: 3
+   selector:
+      matchLabels:
+         type: webserver
+        template:
+         metadata:
+           name: mypod
+           labels:
+              type: webserver
+   spec:
+    containers:
+    - name: myn1
+      image: nginx
+
+Kubernetes Probe:
++++++++++++++++++++++++++
+Kubernetes has three types of probes that can be declared:
+
+Liveness Probe: used to determine how alive the container is, regardless of dependencies. ...
+Readiness Probe: used to determine whether the container is ready to accept traffic. The container can enter a non-ready state when external dependencies are failing. ...
+Startup Probe: used to determine if the container started up. ...
+
+8/9/21
+++++++++++++++++++++++++
+
+Topic:
+1.Namespace
+2.Storage/volumes
+3.Stateless
+4. Statefull
+
+difference between deployment and service in kubernetes
+==================================
+What's the difference between a Service and a Deployment in Kubernetes?
+ A deployment is responsible for keeping a set of pods running.
+ A service is responsible for enabling network access to a set of pods.
+ We could use a deployment without a service to keep a set of identical pods running in the Kubernetes cluster.
+
+kubernetes namespace
+=======================
+In Kubernetes, namespaces provides a mechanism for isolating groups of resources within a single cluster. 
+Names of resources need to be unique within a namespace, but not across namespaces.
+Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc).
+ 4 types
+Kubernetes starts with four initial namespaces:
+default The default namespace for objects with no other namespace
+kube-system The namespace for objects created by the Kubernetes system
+kube-public This namespace is created automatically and is readable by all users (including those not authenticated).
+kube-node-lease This namespace for the lease objects associated with each node which improves the performance of the nodes
+
+Storage:
+------------
+it's a preserve the data
+
+if you are storing the data on host machine locally that kind of volumes is called host path volume 
+ex- /host/path
+
+you are preserving the data on node which will be created that data on node1 
+pv1 - 1gi
+
+
+Volumes:
+1. PV - Persistent Volumes - defalult volume
+2. PVC - Persistent Volumes claim - 
+AWS, Azure, GCP, K8S, IBM, NFS
+
+Diff volumes:
+===========
+1.Sender
+2.NFS - onprimises
+3.EBS- AWS
+4.Hostpath- GCP
+5.Glusterfs
+
+storage admin - They will be taking the responsible for free pool diff types of volumes area available & also this preserved data called a persistence volume
+================
+
+Stoarge class:
+==========
+1. Manual
+2.standard (dynamically)
+
+what is persistence Volume
+============================
+
+is about piece of storage in your cluster that has to be provisined by administrator
+
+   or
+Many times you can create with dynamically of pv -->means we dont have options like EBS
+so for that we have to create dynamically of the components called EBS(AWS) and set of storage class
+
+PV:
+--------------
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: block-pv
+spec:
+ storageClassName: manual            #2. Standrad
+ capacity: 
+  storage: 1Gi
+ accessModes:
+  - ReadWriteOnce             #1. RWO 2. RWM 3. ROM
+ hostPath:
+  path: /tmp/data
+
+Access Mode:
+==============
+ 3 types of modes
+1. RWO - ReadWriteOnce - Volume can be mounted by single node only
+2. RWM - ReadWriteMultiple - Volume can be mounted by multiple node only(external drive - AWS- EBS - 5GB)
+3. ROM  - ReadOnlyMany -  Volume can be mounted ready only by multiple nodes.
+
+PVC: persistent Volume Claim 
+--------------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+ name: pvc
+spec:
+ storageClassName: manual
+ accessModes:
+  - ReadWriteOnce
+ resources:
+  requests:
+   storage: 1Gi
+
+Stateless & Statefull
++++++++++++++++++++++++++++++++++
+statefulSets:
+ 1. Staefulsets crrate pods with sticky identities
+ 2. the pods retain their identity through various rescheduling
+ 3 . it will be providing stable identity
+ 4. pod template is specified as apart of statefulset application
+
+stateful:
+==========
+ can create DB
+
+Statless Application:
+_________________
+java application
+3 Replicas - 3 pods
+Deploymenthis applicaion usin deploymen object called stateless application
+
+
+StatefulSets:
+-------------------------------------
+- Statefulsets create pods wih sticky identities
+- the pods retain their identity thorugh various rescheduling
+
+DB
+
+Task:
+----
+Frontnend:
+_---------- 
+POD - Creation  - java/.net/python - they are not storing data this is called stateless applicaion
+Application - Configuratoin
+
+Backend:
+------------
+Fetching the DB from frontend
+
+scale up:
+i will create pod1 --pod10
+
+scale down:
+it will delete pod1--pod 10
+
+Pre-requiste of create statefull appliction:
+---------------------
+1. 2 pods will e creating with ownip
+2. 2 pvc will create
+3. DNS will create
+
+
+StatefullSet:
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: "nginx"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: k8s.gcr.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+		  
+Execuion:
+
+ kubectl get pods -w -l app=nginx
+ 
+Busybox:
+
+kubectl run -i --tty --image busybox:1.28 dns-test --restart=Never --rm /bin/sh
+
+13/9/21
+-----------
+what is configmap:
+==============
+A ConfigMap is an API object used to store non-confidential data in key-value pairs. Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+
+A ConfigMap allows you to decouple environment-specific configuration from your container images, so that your applications are easily portable.
+
+
+Configmaps:
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+  - image: mynginx
+    name: myn1
+    volumeMounts:
+     - name: myvol1
+       mountPath: /etc/config
+
+  volumes:
+   name: myvol
+   configMap:
+     name: dev-config1
+  restartPolicy: Never
+
+Secrets:
+============
+A Secret is an object that contains a small amount of sensitive data such as a password, a token, or a key. Such information might otherwise be put in a Pod specification or in a container image. Using a Secret means that you don't need to include confidential data in your application code.
+
+Because Secrets can be created independently of the Pods that use them, there is less risk of the Secret (and its data) being exposed during the workflow of creating, viewing, and editing Pods. Kubernetes, and applications that run in your cluster, can also take additional precautions with Secrets, such as avoiding writing secret data to nonvolatile storage.
+
+Secrets are similar to ConfigMaps but are specifically intended to hold confidential data.
+
+
+Secrets:
+vim secretsdemo.yml
+
+apiVersion: v1
+kind: Secret
+metadta:
+  name: secret2
+ type: opaque
+ data:
+  username: YWRtaW4=
+  password: YWRtaW5AMTIz
+  
+Pod-secret.yml
+===========
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-secret
+spec:
+ containers:
+  - image: nginx
+    name: c1
+    volumeMounts:
+      - name: foo
+        mountPath: "/etc/foo"
+        readOnly: true
+ volumes:
+   - name: foo
+     secret:
+       secretName: secret
+Execution Process:
+============
+kubectl create -f pod-secret.yml
+kubectl exec -it pod-secret -- bash
+cd /etc/foo
+ls
+username password
+
+
+
+
+Secrets:
+vim prodENV.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-secret12
+spec:
+  containers:
+    - image: nginx
+      name: c1
+      env:
+       - name: secret_Password
+         valueFrom:
+           secretKeyRef:
+             name: secret12
+             key: password
+
+Execution:
+==============
+kubectl create -f prodENV.yml
+kubectl exec -it prodENV -- bash
+
+
+Horizontal Pod Autoscalling:
+_____________________________
+Horizontal POd Autoscaler automatically scales the number of pods in replication controller, deployment, replicaset or statefulset based
+on oberved CPU Utilization(or, with custom metrics support, on some other applcation-providedmetrics)
+Note - HPA doesnot apply to object that cant be scaled, for exmple DaemonSets.
+
+Imp of HPA
+=====
+1.users request will get more automatically pods will get increase
+2.users request will get less automatically pods will delete
+
+replicas - 10 
+
+5 pod  - 80%
+another 6th pod
+MinPod: 1
+MaxPod: 3
+
+1core = 100millicpu
+top 
+
+
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      name: nginxpod
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          resources:
+            limits:
+              cpu: 20m ## 10% of 1 core on your system
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+spec:
+  type: ClusterIP  ## this is default if we do not type in service definition
+  selector:
+    app: nginx
+  ports:
+   - protocol: TCP
+     port: 80
+     targetPort: 80
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 10
+
+Test the HPA using apache bench
+=======================
+apache bench is a load tesing and bench mark tool for HTTP Server, it can be run from command line
+
+
+kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -o- http://10.8.2.85; done"
+
+kubeprobes
+==========
+What is KUBE probe?
+The kubelet uses readiness probes to know when a container is ready to start accepting traffic. A Pod is considered ready when all of its containers are ready. One use of this signal is to control which Pods are used as backends for Services. 
+When a Pod is not ready, it is removed from Service load balancers
+
+What are the Three Types of Kubernetes Probes?
+===============================================
+Liveness Probe—indicates if the container is operating. If so, no action is taken. ...
+Readiness Probe—indicates whether the application running in the container is ready to accept requests. ...
+Startup Probe—indicates whether the application running in the container has started.
+
+difference between replcation controller and replicasets?
+=========================================================
+The major difference between a replication controller and replica set is that the rolling-update command works with Replication Controllers, but won't work with a Replica Set.
+
+what is the difference between deployment and statefuklsets?
+=============================================================
+https://www.kubermatic.com/blog/keeping-the-state-of-apps-6-introduction-to-statefulsets/
+
+what si the difference between repliasets and deploymnets?
+====================================
+A ReplicaSet ensures that a specified number of pod replicas are running at any given time. However, a Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods along with a lot of other useful features.
+
+what is the difference between ingress and egress in kubernetes?
+=============================================================
+Ingress and egress
+From the point of view of a Kubernetes pod, ingress is incoming traffic to the pod, and egress is outgoing traffic from the pod. In Kubernetes network policy, you create ingress and egress “allow” rules independently (egress, ingress, or both).
+
+
+Blue-Green Deployment
+====================
+A Blue-Green deployment is change management strategy for releasing s/w code
+
+Blue the deployment the infrastructure 
+TOMCAT_VERSION: 7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
